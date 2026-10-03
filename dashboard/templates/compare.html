@@ -1,0 +1,655 @@
+{% extends "base.html" %}
+
+{% block title %}
+    ARGUS · Observation Comparison
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+
+        <div class="breadcrumb">
+
+            <a href="{{ url_for('dashboard') }}">
+                ARGUS
+            </a>
+
+            <span>/</span>
+
+            <a href="{{ url_for(
+                'asset_detail',
+                asset_id=asset.id
+            ) }}">
+                {{ asset.ip }}
+            </a>
+
+            <span>/</span>
+
+            <span>
+                Comparison
+            </span>
+
+        </div>
+
+        <h1>Observation Comparison</h1>
+
+        <p>
+            Compare two stored network states and identify what changed.
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================
+     COMPARISON HEADER
+     ======================================================== -->
+
+<section class="panel">
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>Comparison Scope</h2>
+
+            <p>
+                Asset state transition being investigated.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="comparison-grid">
+
+
+        <a
+            class="state-card"
+            href="{{ url_for(
+                'observation_detail',
+                asset_id=asset.id,
+                observation_id=from_observation.id
+            ) }}"
+        >
+
+            <span class="info-label">
+                Previous Observation
+            </span>
+
+            <strong>
+                Observation #{{ from_observation.id }}
+            </strong>
+
+            <span class="timestamp">
+
+                <span class="date">
+                    {{ from_observation.observed_at|date_only }}
+                </span>
+
+                <span class="time">
+                    {{ from_observation.observed_at|time_only }}
+                </span>
+
+            </span>
+
+        </a>
+
+
+        <a
+            class="state-card"
+            href="{{ url_for(
+                'observation_detail',
+                asset_id=asset.id,
+                observation_id=to_observation.id
+            ) }}"
+        >
+
+            <span class="info-label">
+                Current Observation
+            </span>
+
+            <strong>
+                Observation #{{ to_observation.id }}
+            </strong>
+
+            <span class="timestamp">
+
+                <span class="date">
+                    {{ to_observation.observed_at|date_only }}
+                </span>
+
+                <span class="time">
+                    {{ to_observation.observed_at|time_only }}
+                </span>
+
+            </span>
+
+        </a>
+
+    </div>
+
+</section>
+
+
+<!-- ========================================================
+     CHANGE SUMMARY
+     ======================================================== -->
+
+<section class="panel">
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>Change Summary</h2>
+
+            <p>
+                Services added, removed or changed between the two observations.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="summary-grid">
+
+
+        <div class="summary-card">
+
+            <span class="summary-label">
+                Added
+            </span>
+
+            <strong class="summary-value">
+                {{ result.added|length }}
+            </strong>
+
+            <span class="summary-meta">
+                New services
+            </span>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <span class="summary-label">
+                Removed
+            </span>
+
+            <strong class="summary-value">
+                {{ result.removed|length }}
+            </strong>
+
+            <span class="summary-meta">
+                Missing services
+            </span>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <span class="summary-label">
+                Changed
+            </span>
+
+            <strong class="summary-value">
+                {{ result.changed|length }}
+            </strong>
+
+            <span class="summary-meta">
+                Modified services
+            </span>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <span class="summary-label">
+                Total Difference
+            </span>
+
+            <strong class="summary-value">
+                {{
+                    result.added|length
+                    + result.removed|length
+                    + result.changed|length
+                }}
+            </strong>
+
+            <span class="summary-meta">
+                Observed differences
+            </span>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ========================================================
+     ADDED SERVICES
+     ======================================================== -->
+
+<section class="panel">
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>Added Services</h2>
+
+            <p>
+                Services present in the current observation but not the previous
+                one.
+            </p>
+
+        </div>
+
+        <span class="section-count">
+            {{ result.added|length }}
+        </span>
+
+    </div>
+
+
+    {% if result.added %}
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Port</th>
+                    <th>Protocol</th>
+                    <th>Service</th>
+                    <th>Product</th>
+                    <th>Version</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for service in result.added %}
+
+                <tr>
+
+                    <td>
+                        <strong>
+                            {{ service.port }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        {{ service.protocol }}
+                    </td>
+
+                    <td>
+                        {{ service.name or service.service or "Unknown" }}
+                    </td>
+
+                    <td>
+                        {{ service.product or "Unknown" }}
+                    </td>
+
+                    <td>
+                        {{ service.version or "Unknown" }}
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+
+        <strong>
+            No services added
+        </strong>
+
+        <span>
+            No new services were observed.
+        </span>
+
+    </div>
+
+    {% endif %}
+
+</section>
+
+
+<!-- ========================================================
+     REMOVED SERVICES
+     ======================================================== -->
+
+<section class="panel">
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>Removed Services</h2>
+
+            <p>
+                Services present in the previous observation but missing from
+                the current one.
+            </p>
+
+        </div>
+
+        <span class="section-count">
+            {{ result.removed|length }}
+        </span>
+
+    </div>
+
+
+    {% if result.removed %}
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Port</th>
+                    <th>Protocol</th>
+                    <th>Service</th>
+                    <th>Product</th>
+                    <th>Version</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for service in result.removed %}
+
+                <tr>
+
+                    <td>
+                        <strong>
+                            {{ service.port }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        {{ service.protocol }}
+                    </td>
+
+                    <td>
+                        {{ service.name or service.service or "Unknown" }}
+                    </td>
+
+                    <td>
+                        {{ service.product or "Unknown" }}
+                    </td>
+
+                    <td>
+                        {{ service.version or "Unknown" }}
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+
+        <strong>
+            No services removed
+        </strong>
+
+        <span>
+            No previously observed services disappeared.
+        </span>
+
+    </div>
+
+    {% endif %}
+
+</section>
+
+
+<!-- ========================================================
+     CHANGED SERVICES
+     ======================================================== -->
+
+<section class="panel">
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>Changed Services</h2>
+
+            <p>
+                Services that remained present but changed their observed
+                details.
+            </p>
+
+        </div>
+
+        <span class="section-count">
+            {{ result.changed|length }}
+        </span>
+
+    </div>
+
+
+    {% if result.changed %}
+
+    <div class="event-list">
+
+        {% for change in result.changed %}
+
+        <div class="event-card">
+
+            <div class="event-card-header">
+
+                <div>
+
+                    <strong>
+                        Port {{ change.port }}/{{ change.protocol }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="comparison-grid">
+
+
+                <div class="state-card">
+
+                    <span class="info-label">
+                        Previous State
+                    </span>
+
+                    <strong>
+                        {{ change.previous.name
+                           if change.previous is defined
+                           else change.old.name
+                           if change.old is defined
+                           else "Service" }}
+                    </strong>
+
+                    <span class="table-subtext">
+
+                        Product:
+                        {{
+                            change.previous.product
+                            if change.previous is defined
+                            else change.old.product
+                            if change.old is defined
+                            else "Unknown"
+                        }}
+
+                    </span>
+
+                    <span class="table-subtext">
+
+                        Version:
+                        {{
+                            change.previous.version
+                            if change.previous is defined
+                            else change.old.version
+                            if change.old is defined
+                            else "Unknown"
+                        }}
+
+                    </span>
+
+                </div>
+
+
+                <div class="state-card">
+
+                    <span class="info-label">
+                        Current State
+                    </span>
+
+                    <strong>
+                        {{ change.current.name
+                           if change.current is defined
+                           else change.new.name
+                           if change.new is defined
+                           else "Service" }}
+                    </strong>
+
+                    <span class="table-subtext">
+
+                        Product:
+                        {{
+                            change.current.product
+                            if change.current is defined
+                            else change.new.product
+                            if change.new is defined
+                            else "Unknown"
+                        }}
+
+                    </span>
+
+                    <span class="table-subtext">
+
+                        Version:
+                        {{
+                            change.current.version
+                            if change.current is defined
+                            else change.new.version
+                            if change.new is defined
+                            else "Unknown"
+                        }}
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+
+        <strong>
+            No service changes
+        </strong>
+
+        <span>
+            No existing services changed their observed details.
+        </span>
+
+    </div>
+
+    {% endif %}
+
+</section>
+
+
+<!-- ========================================================
+     INTERPRETATION
+     ======================================================== -->
+
+<section class="panel">
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>Interpretation</h2>
+
+            <p>
+                Context for interpreting the observed differences.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="event-card">
+
+        {% if
+            result.added|length == 0
+            and result.removed|length == 0
+            and result.changed|length == 0
+        %}
+
+            <p class="event-message">
+                No service differences were detected between these two
+                observations.
+            </p>
+
+        {% else %}
+
+            <p class="event-message">
+                ARGUS identified differences between the selected network
+                states. These differences describe a change in observed
+                network configuration and are not, by themselves, proof of
+                malicious activity.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</section>
+
+
+{% endblock %}

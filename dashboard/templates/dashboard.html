@@ -1,0 +1,1102 @@
+{% extends "base.html" %}
+
+{% block title %}ARGUS | Security Operations{% endblock %}
+
+{% block breadcrumb %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <div class="eyebrow">Security Operations</div>
+
+        <h1>Network Intelligence</h1>
+
+        <p class="page-subtitle">
+            Monitor assets, detect network changes, investigate anomalies,
+            and track the security state of your environment.
+        </p>
+    </div>
+
+    <div class="header-actions">
+
+        <a
+            href="{{ url_for('observations') }}"
+            class="button secondary"
+        >
+            View Observations
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     SECURITY OVERVIEW
+     ===================================================== -->
+
+<div class="summary-grid">
+
+    <div class="summary-card">
+
+        <div class="summary-label">
+            Assets
+        </div>
+
+        <div class="summary-value">
+            {{ summary.assets }}
+        </div>
+
+        <div class="summary-meta">
+            Discovered network assets
+        </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+        <div class="summary-label">
+            Observations
+        </div>
+
+        <div class="summary-value">
+            {{ summary.observations }}
+        </div>
+
+        <div class="summary-meta">
+            Captured network states
+        </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+        <div class="summary-label">
+            Service Records
+        </div>
+
+        <div class="summary-value">
+            {{ summary.services }}
+        </div>
+
+        <div class="summary-meta">
+            Historical service observations
+        </div>
+
+    </div>
+
+
+    <div class="summary-card">
+
+        <div class="summary-label">
+            Active Alerts
+        </div>
+
+        <div class="summary-value">
+            {{ active_alerts|length }}
+        </div>
+
+        <div class="summary-meta">
+            {% if active_alerts %}
+                Conditions requiring investigation
+            {% else %}
+                No unresolved conditions
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =====================================================
+     INVESTIGATION PRIORITY
+     ===================================================== -->
+
+<section
+    class="panel"
+    id="priority"
+>
+
+    <div class="panel-header">
+
+        <div>
+
+            <div class="eyebrow">
+                V2 Intelligence
+            </div>
+
+            <h2>Investigation Queue</h2>
+
+            <p>
+                Detection events ordered by operational priority,
+                risk score, and recency.
+            </p>
+
+        </div>
+
+        <span class="count-badge">
+            {{ investigation_queue|length }}
+        </span>
+
+    </div>
+
+
+    {% if investigation_queue %}
+
+    <div class="event-list">
+
+        {% for event in investigation_queue %}
+
+        <div class="event-card">
+
+            <div class="event-card-header">
+
+                <div>
+
+                    <span class="event-type">
+
+                        {{ event.event_type
+                            |replace("_", " ")
+                            |title }}
+
+                    </span>
+
+
+                    {% if event.port %}
+
+                    <span class="event-target">
+
+                        {{ event.port }}/{{ event.protocol }}
+
+                    </span>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="event-meta">
+
+                    {% if event.risk %}
+
+                    <span
+                        class="risk-badge {{ event.risk.level }}"
+                    >
+                        RISK {{ event.risk.score }}
+                    </span>
+
+                    <span
+                        class="risk-badge {{ event.risk.priority }}"
+                    >
+                        {{ event.risk.priority|upper }}
+                    </span>
+
+                    {% endif %}
+
+
+                    {% if event.investigation_status == "new" %}
+
+                    <span class="severity-badge {{ event.severity }}">
+                        NEW
+                    </span>
+
+                    {% elif event.investigation_status == "investigating" %}
+
+                    <span class="severity-badge medium">
+                        INVESTIGATING
+                    </span>
+
+                    {% elif event.investigation_status == "resolved" %}
+
+                    <span class="severity-badge low">
+                        RESOLVED
+                    </span>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="event-message">
+
+                {{ event.message }}
+
+            </div>
+
+
+            <div class="event-details">
+
+                <div>
+
+                    <span class="detail-label">
+                        Asset
+                    </span>
+
+                    <span>
+                        {{ event.ip }}
+                    </span>
+
+                </div>
+
+
+                <div>
+
+                    <span class="detail-label">
+                        Priority
+                    </span>
+
+                    <span>
+
+                        {% if event.risk %}
+                            {{ event.risk.priority|title }}
+                        {% else %}
+                            Normal
+                        {% endif %}
+
+                    </span>
+
+                </div>
+
+
+                <div>
+
+                    <span class="detail-label">
+                        Service
+                    </span>
+
+                    <span>
+                        {{ event.service_name or "Unknown" }}
+                    </span>
+
+                </div>
+
+
+                <div>
+
+                    <span class="detail-label">
+                        Observation
+                    </span>
+
+                    <a
+                        href="{{ url_for(
+                            'observation_detail',
+                            asset_id=event.asset_id,
+                            observation_id=event.observation_id
+                        ) }}"
+                        class="text-link"
+                    >
+                        #{{ event.observation_id }}
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <div class="event-footer">
+
+                <span class="timestamp">
+
+                    {{ event.created_at|date_only }}
+
+                    {{ event.created_at|time_only }}
+
+                </span>
+
+
+                <div class="event-actions">
+
+                    <a
+                        href="{{ url_for(
+                            'observation_detail',
+                            asset_id=event.asset_id,
+                            observation_id=event.observation_id
+                        ) }}"
+                        class="button secondary"
+                    >
+                        Evidence
+                    </a>
+
+
+                    {% if event.investigation_status == "new" %}
+
+                    <form
+                        method="POST"
+                        action="{{ url_for(
+                            'investigate_event',
+                            event_id=event.id
+                        ) }}"
+                    >
+
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="start"
+                        >
+
+                        <button
+                            type="submit"
+                            class="button"
+                        >
+                            Investigate
+                        </button>
+
+                    </form>
+
+
+                    {% elif event.investigation_status == "investigating" %}
+
+                    <form
+                        method="POST"
+                        action="{{ url_for(
+                            'investigate_event',
+                            event_id=event.id
+                        ) }}"
+                    >
+
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="resolve"
+                        >
+
+                        <button
+                            type="submit"
+                            class="button"
+                        >
+                            Resolve
+                        </button>
+
+                    </form>
+
+
+                    {% elif event.investigation_status == "resolved" %}
+
+                    <form
+                        method="POST"
+                        action="{{ url_for(
+                            'investigate_event',
+                            event_id=event.id
+                        ) }}"
+                    >
+
+                        <input
+                            type="hidden"
+                            name="action"
+                            value="reopen"
+                        >
+
+                        <button
+                            type="submit"
+                            class="button secondary"
+                        >
+                            Reopen
+                        </button>
+
+                    </form>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+
+        <div class="empty-state-icon">
+            ✓
+        </div>
+
+        <h3>
+            No investigations queued
+        </h3>
+
+        <p>
+            ARGUS currently has no detection events requiring prioritization.
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</section>
+
+<!-- =====================================================
+     CURRENT SECURITY STATE
+     ===================================================== -->
+
+<div class="dashboard-grid">
+
+    <section class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <div class="eyebrow">
+                    Current State
+                </div>
+
+                <h2>Network Overview</h2>
+
+                <p>
+                    Current monitored assets and their latest state.
+                </p>
+
+            </div>
+
+            <span class="status-badge up">
+                MONITORING
+            </span>
+
+        </div>
+
+
+        {% if assets %}
+
+        <div class="table-wrap">
+
+            <table class="data-table">
+
+                <thead>
+
+                    <tr>
+                        <th>Asset</th>
+                        <th>Status</th>
+                        <th>Services</th>
+                        <th>Observation</th>
+                        <th>Last Seen</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for asset in assets %}
+
+                    <tr>
+
+                        <td>
+
+                            <a
+                                href="{{ url_for(
+                                    'asset_detail',
+                                    asset_id=asset.id
+                                ) }}"
+                                class="text-link"
+                            >
+                                {{ asset.ip }}
+                            </a>
+
+                            {% if asset.hostname %}
+
+                            <div class="table-secondary">
+                                {{ asset.hostname }}
+                            </div>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if asset.status == "up" %}
+
+                                <span class="status-badge up">
+                                    UP
+                                </span>
+
+                            {% else %}
+
+                                <span class="status-badge resolved">
+                                    {{ asset.status|upper }}
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            <strong>
+                                {{ asset.open_services or 0 }}
+                            </strong>
+
+                        </td>
+
+
+                        <td>
+
+                            {% if asset.latest_observation_id %}
+
+                                <a
+                                    href="{{ url_for(
+                                        'observation_detail',
+                                        asset_id=asset.id,
+                                        observation_id=asset.latest_observation_id
+                                    ) }}"
+                                    class="text-link"
+                                >
+                                    #{{ asset.latest_observation_id }}
+                                </a>
+
+                            {% else %}
+
+                                <span class="muted">
+                                    None
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="timestamp">
+
+                                {{ asset.last_seen|date_only }}
+
+                                {{ asset.last_seen|time_only }}
+
+                            </span>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div class="empty-state">
+
+            <div class="empty-state-icon">
+                ◉
+            </div>
+
+            <h3>
+                No assets discovered
+            </h3>
+
+            <p>
+                ARGUS has not recorded any network assets yet.
+            </p>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- ALERT STATE -->
+
+    <section
+        class="panel"
+        id="alerts"
+    >
+
+        <div class="panel-header">
+
+            <div>
+
+                <div class="eyebrow">
+                    Detection
+                </div>
+
+                <h2>Alert State</h2>
+
+                <p>
+                    Conditions currently requiring attention.
+                </p>
+
+            </div>
+
+            <span class="count-badge">
+                {{ active_alerts|length }}
+            </span>
+
+        </div>
+
+
+        {% if active_alerts %}
+
+        <div class="event-list">
+
+            {% for alert in active_alerts %}
+
+            <a
+                href="{{ url_for(
+                    'alert_detail',
+                    alert_id=alert.id
+                ) }}"
+                class="event-card"
+            >
+
+                <div class="event-card-header">
+
+                    <div>
+
+                        <span class="event-type">
+                            {{ alert.event_type
+                                |replace("_", " ")
+                                |title }}
+                        </span>
+
+                        {% if alert.port %}
+
+                        <span class="event-target">
+                            {{ alert.port }}/{{ alert.protocol }}
+                        </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="event-meta">
+
+                        {% if alert.risk %}
+
+                        <span
+                            class="risk-badge {{ alert.risk.level }}"
+                        >
+                            RISK {{ alert.risk.score }}
+                        </span>
+
+                        <span
+                            class="risk-badge {{ alert.risk.priority }}"
+                        >
+                            {{ alert.risk.priority|upper }}
+                        </span>
+
+                        {% endif %}
+
+                        <span
+                            class="severity-badge {{ alert.severity }}"
+                        >
+                            {{ alert.severity|upper }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="event-message">
+
+                    Alert condition remains active.
+
+                </div>
+
+
+                <div class="event-footer">
+
+                    <span>
+
+                        Occurrences:
+                        {{ alert.occurrence_count }}
+
+                    </span>
+
+                    <span class="text-link">
+                        Investigate →
+                    </span>
+
+                </div>
+
+            </a>
+
+            {% endfor %}
+
+        </div>
+
+        {% else %}
+
+        <div class="empty-state">
+
+            <div class="empty-state-icon">
+                ✓
+            </div>
+
+            <h3>
+                Environment clear
+            </h3>
+
+            <p>
+                ARGUS currently has no unresolved alert conditions.
+            </p>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+
+<!-- =====================================================
+     DETECTION ACTIVITY
+     ===================================================== -->
+
+<section
+    class="panel"
+    id="events"
+>
+
+    <div class="panel-header">
+
+        <div>
+
+            <div class="eyebrow">
+                Detection Activity
+            </div>
+
+            <h2>Recent Events</h2>
+
+            <p>
+                Detection history ordered by investigation priority.
+            </p>
+
+        </div>
+
+        <span class="count-badge">
+            {{ recent_events|length }}
+        </span>
+
+    </div>
+
+
+    {% if recent_events %}
+
+    <div class="event-list">
+
+        {% for event in recent_events %}
+
+        <a
+            href="{{ url_for(
+                'observation_detail',
+                asset_id=event.asset_id,
+                observation_id=event.observation_id
+            ) }}"
+            class="event-card"
+        >
+
+            <div class="event-card-header">
+
+                <div>
+
+                    <span class="event-type">
+
+                        {{ event.event_type
+                            |replace("_", " ")
+                            |title }}
+
+                    </span>
+
+
+                    {% if event.port %}
+
+                    <span class="event-target">
+
+                        {{ event.port }}/{{ event.protocol }}
+
+                    </span>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="event-meta">
+
+                    {% if event.risk %}
+
+                    <span
+                        class="risk-badge {{ event.risk.level }}"
+                    >
+                        RISK {{ event.risk.score }}
+                    </span>
+
+                    <span
+                        class="risk-badge {{ event.risk.priority }}"
+                    >
+                        {{ event.risk.priority|upper }}
+                    </span>
+
+                    {% endif %}
+
+
+                    <span
+                        class="severity-badge {{ event.severity }}"
+                    >
+                        {{ event.severity|upper }}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="event-message">
+
+                {{ event.message }}
+
+            </div>
+
+
+            <div class="event-details">
+
+                <div>
+
+                    <span class="detail-label">
+                        Asset
+                    </span>
+
+                    <span>
+                        {{ event.ip }}
+                    </span>
+
+                </div>
+
+
+                <div>
+
+                    <span class="detail-label">
+                        Service
+                    </span>
+
+                    <span>
+                        {{ event.service_name or "Unknown" }}
+                    </span>
+
+                </div>
+
+
+                <div>
+
+                    <span class="detail-label">
+                        Observation
+                    </span>
+
+                    <span>
+                        #{{ event.observation_id }}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="event-footer">
+
+                <span class="timestamp">
+
+                    {{ event.created_at|date_only }}
+
+                    {{ event.created_at|time_only }}
+
+                </span>
+
+
+                <span class="text-link">
+                    Inspect Observation →
+                </span>
+
+            </div>
+
+        </a>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+
+        <div class="empty-state-icon">
+            ◌
+        </div>
+
+        <h3>
+            No detection events
+        </h3>
+
+        <p>
+            ARGUS has not recorded any detection events yet.
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</section>
+
+
+<!-- =====================================================
+     INVESTIGATION AREAS
+     ===================================================== -->
+
+<section class="panel">
+
+    <div class="panel-header">
+
+        <div>
+
+            <div class="eyebrow">
+                Intelligence
+            </div>
+
+            <h2>Investigation Areas</h2>
+
+            <p>
+                Navigate directly into ARGUS analytical views.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="action-grid">
+
+        <a
+            href="{{ url_for('observations') }}"
+            class="action-card"
+        >
+
+            <span class="action-icon">
+                ◌
+            </span>
+
+            <span>
+
+                <strong>
+                    Observations
+                </strong>
+
+                <small>
+                    Review captured network states.
+                </small>
+
+            </span>
+
+        </a>
+
+
+        <a
+            href="{{ url_for('baselines') }}"
+            class="action-card"
+        >
+
+            <span class="action-icon">
+                ◫
+            </span>
+
+            <span>
+
+                <strong>
+                    Baselines
+                </strong>
+
+                <small>
+                    Review established reference states.
+                </small>
+
+            </span>
+
+        </a>
+
+
+        <a
+            href="{{ url_for('comparisons') }}"
+            class="action-card"
+        >
+
+            <span class="action-icon">
+                ⇄
+            </span>
+
+            <span>
+
+                <strong>
+                    Comparisons
+                </strong>
+
+                <small>
+                    Investigate network state changes.
+                </small>
+
+            </span>
+
+        </a>
+
+
+        <a
+            href="{{ url_for('dashboard') }}#alerts"
+            class="action-card"
+        >
+
+            <span class="action-icon">
+                !
+            </span>
+
+            <span>
+
+                <strong>
+                    Alerts
+                </strong>
+
+                <small>
+                    Review unresolved detection conditions.
+                </small>
+
+            </span>
+
+        </a>
+
+    </div>
+
+</section>
+
+
+<div class="page-footer">
+
+    <span>
+        ARGUS Security Operations
+    </span>
+
+    <span>
+        Monitoring {{ summary.assets }} asset{{ '' if summary.assets == 1 else 's' }}
+    </span>
+
+</div>
+
+{% endblock %}

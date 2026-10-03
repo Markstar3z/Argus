@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}ARGUS | Network Intelligence{% endblock %}</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-mark">
+                A
+            </div>
+
+            <div class="brand-copy">
+                <strong>ARGUS</strong>
+                <span>Network Intelligence</span>
+            </div>
+
+        </div>
+
+
+        <div class="system-status">
+
+            <span class="status-dot"></span>
+
+            <div>
+                <strong>System Online</strong>
+                <span>Defensive monitoring active</span>
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-nav">
+
+            <div class="nav-section">
+
+                <span class="nav-section-title">
+                    Overview
+                </span>
+
+                <a
+                    href="{{ url_for('dashboard') }}"
+                    class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}"
+                >
+                    <span class="nav-icon">◈</span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+
+            </div>
+
+
+            <div class="nav-section">
+
+                <span class="nav-section-title">
+                    Monitoring
+                </span>
+
+                <a
+                    href="{{ url_for('dashboard') }}#assets"
+                    class="nav-item"
+                >
+                    <span class="nav-icon">◉</span>
+                    <span class="nav-label">Assets</span>
+                </a>
+
+                <a
+                    href="{{ url_for('observations') }}"
+                    class="nav-item {% if request.endpoint == 'observation_detail' %}active{% endif %}"
+                >
+                    <span class="nav-icon">◌</span>
+                    <span class="nav-label">Observations</span>
+                </a>
+
+            </div>
+
+
+            <div class="nav-section">
+
+                <span class="nav-section-title">
+                    Detection
+                </span>
+
+                <a
+                    href="{{ url_for('dashboard') }}#alerts"
+                    class="nav-item {% if request.endpoint == 'alert_detail' %}active{% endif %}"
+                >
+                    <span class="nav-icon">!</span>
+                    <span class="nav-label">Alerts</span>
+                </a>
+
+                <a
+                    href="{{ url_for('dashboard') }}#events"
+                    class="nav-item"
+                >
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-label">Events</span>
+                </a>
+
+            </div>
+
+
+            <div class="nav-section">
+
+                <span class="nav-section-title">
+                    Intelligence
+                </span>
+
+                <a
+                    href="{{ url_for('baselines') }}"
+                    class="nav-item"
+                >
+                    <span class="nav-icon">◫</span>
+                    <span class="nav-label">Baselines</span>
+                </a>
+
+                <a
+                    href="{{ url_for('comparisons') }}"
+                    class="nav-item {% if request.endpoint == 'observation_compare' %}active{% endif %}"
+                >
+                    <span class="nav-icon">⇄</span>
+                    <span class="nav-label">Comparisons</span>
+                </a>
+
+            </div>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <div class="footer-indicator"></div>
+
+            <div>
+                <strong>ARGUS v0.1</strong>
+                <span>Defensive Network Intelligence</span>
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div class="topbar-context">
+
+                <span class="topbar-label">
+                    Security Operations
+                </span>
+
+                <span class="topbar-divider">/</span>
+
+                <span>
+                    {% block breadcrumb %}
+                    ARGUS
+                    {% endblock %}
+                </span>
+
+            </div>
+
+
+            <div class="topbar-status">
+
+                <span class="status-dot"></span>
+
+                <span>
+                    Monitoring active
+                </span>
+
+            </div>
+
+        </header>
+
+
+        <div class="page-content">
+
+            {% block content %}
+            {% endblock %}
+
+        </div>
+
+
+        <footer class="app-footer">
+
+            <span>
+                ARGUS Network Intelligence
+            </span>
+
+            <span>
+                Defensive Monitoring Platform
+            </span>
+
+        </footer>
+
+    </main>
+
+</div>
+
+{% block scripts %}
+{% endblock %}
+
+</body>
+</html>

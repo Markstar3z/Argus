@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+
+{% block title %}Observation #{{ observation.id }} | ARGUS{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="eyebrow">Observation Detail</div>
+        <h1>Observation #{{ observation.id }}</h1>
+        <p class="page-subtitle">
+            Detailed inspection of a captured network state.
+        </p>
+    </div>
+
+    <div class="header-actions">
+        <a
+            href="{{ url_for('asset_detail', asset_id=asset.id) }}"
+            class="button secondary"
+        >
+            ← Back to Asset
+        </a>
+    </div>
+</div>
+
+
+<section class="profile-grid">
+
+    <div class="panel profile-card">
+        <div class="panel-header">
+            <div>
+                <div class="eyebrow">Observation Profile</div>
+                <h2>Captured State</h2>
+            </div>
+
+            <span class="status-badge up">
+                {{ observation.status|upper }}
+            </span>
+        </div>
+
+        <div class="profile-grid-inner">
+
+            <div class="profile-item">
+                <span class="profile-label">Asset</span>
+                <span class="profile-value">
+                    {{ asset.ip }}
+                </span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">Observation ID</span>
+                <span class="profile-value">
+                    #{{ observation.id }}
+                </span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">Observed</span>
+                <span class="profile-value">
+                    {{ observation.observed_at|date_only }}
+                    {{ observation.observed_at|time_only }}
+                </span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">Status</span>
+                <span class="profile-value">
+                    {{ observation.status|upper }}
+                </span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">Services</span>
+                <span class="profile-value">
+                    {{ observation.services|length }}
+                </span>
+            </div>
+
+            <div class="profile-item">
+                <span class="profile-label">Baseline</span>
+
+                {% if observation.is_baseline %}
+                    <span class="status-badge info">
+                        REFERENCE
+                    </span>
+                {% else %}
+                    <span class="muted">
+                        Not baseline
+                    </span>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+</section>
+
+
+<section class="panel">
+
+    <div class="panel-header">
+        <div>
+            <div class="eyebrow">Network State</div>
+            <h2>Observed Services</h2>
+        </div>
+
+        <span class="count-badge">
+            {{ observation.services|length }}
+        </span>
+    </div>
+
+    {% if observation.services %}
+
+        <div class="table-wrap">
+
+            <table class="data-table">
+
+                <thead>
+                    <tr>
+                        <th>Port</th>
+                        <th>Protocol</th>
+                        <th>Service</th>
+                        <th>Product</th>
+                        <th>Version</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for service in observation.services %}
+
+                    <tr>
+
+                        <td>
+                            <strong>{{ service.port }}</strong>
+                        </td>
+
+                        <td>
+                            <span class="mono">
+                                {{ service.protocol }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {{ service.name or "Unknown" }}
+                        </td>
+
+                        <td>
+                            {{ service.product or "Unknown" }}
+                        </td>
+
+                        <td>
+                            {{ service.version or "Unknown" }}
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-state">
+
+            <div class="empty-state-icon">◌</div>
+
+            <h3>No exposed services</h3>
+
+            <p>
+                ARGUS did not record any open services during this observation.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</section>
+
+
+<section class="panel">
+
+    <div class="panel-header">
+
+        <div>
+            <div class="eyebrow">Detection Activity</div>
+            <h2>Detection Events</h2>
+        </div>
+
+        <span class="count-badge">
+            {{ observation.events|length }}
+        </span>
+
+    </div>
+
+
+    {% if observation.events %}
+
+        <div class="event-list">
+
+            {% for event in observation.events %}
+
+            <article class="event-card">
+
+                <div class="event-card-header">
+
+                    <div>
+
+                        <span class="event-type">
+                            {{ event.event_type|replace("_", " ")|title }}
+                        </span>
+
+                        {% if event.port %}
+                            <span class="event-target">
+                                {{ event.port }}/{{ event.protocol }}
+                            </span>
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="event-meta">
+
+                        <span class="severity-badge {{ event.severity }}">
+                            {{ event.severity|upper }}
+                        </span>
+
+                        {% if event.alert_active %}
+
+                            <span class="status-badge warning">
+                                ALERT ACTIVE
+                            </span>
+
+                        {% else %}
+
+                            <span class="status-badge resolved">
+                                NO ACTIVE ALERT
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <div class="event-message">
+
+                    {{ event.message }}
+
+                </div>
+
+
+                {% if event.service_name or event.product or event.version %}
+
+                <div class="event-details">
+
+                    {% if event.service_name %}
+                    <div>
+                        <span class="detail-label">Service</span>
+                        <span>{{ event.service_name }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if event.product %}
+                    <div>
+                        <span class="detail-label">Product</span>
+                        <span>{{ event.product }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if event.version %}
+                    <div>
+                        <span class="detail-label">Version</span>
+                        <span>{{ event.version }}</span>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                {% endif %}
+
+
+                {% if event.risk %}
+
+                <div class="risk-panel">
+
+                    <div class="risk-header">
+
+                        <div>
+                            <span class="detail-label">
+                                Risk Assessment
+                            </span>
+
+                            <strong>
+                                {{ event.risk.score }}/100
+                            </strong>
+                        </div>
+
+                        <span class="risk-badge {{ event.risk.level }}">
+                            {{ event.risk.level|upper }}
+                        </span>
+
+                    </div>
+
+
+                    {% if event.risk.reasons %}
+
+                    <div class="risk-reasons">
+
+                        {% for reason in event.risk.reasons %}
+
+                        <div class="risk-reason">
+                            <span>•</span>
+                            <span>{{ reason }}</span>
+                        </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+                {% endif %}
+
+
+                <div class="event-footer">
+
+                    <span>
+                        Detected
+                        {{ event.created_at|date_only }}
+                        {{ event.created_at|time_only }}
+                    </span>
+
+                    {% if event.alert_id %}
+
+                    <a
+                        href="{{ url_for('alert_detail', alert_id=event.alert_id) }}"
+                        class="text-link"
+                    >
+                        View Alert →
+                    </a>
+
+                    {% endif %}
+
+                </div>
+
+            </article>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-state">
+
+            <div class="empty-state-icon">✓</div>
+
+            <h3>No detection events</h3>
+
+            <p>
+                No detection events were generated for this observation.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</section>
+
+
+<section class="panel">
+
+    <div class="panel-header">
+
+        <div>
+            <div class="eyebrow">Continue Investigation</div>
+            <h2>Related Analysis</h2>
+        </div>
+
+    </div>
+
+
+    <div class="action-grid">
+
+        <a
+            href="{{ url_for('asset_detail', asset_id=asset.id) }}"
+            class="action-card"
+        >
+            <span class="action-icon">◉</span>
+
+            <span>
+                <strong>Asset History</strong>
+                <small>
+                    Review every observation for this asset.
+                </small>
+            </span>
+        </a>
+
+
+        {% if state.baseline %}
+
+            {% if observation.id != state.baseline.id %}
+
+            <a
+                href="{{ url_for(
+                    'observation_compare',
+                    asset_id=asset.id
+                ) }}?from={{ state.baseline.id }}&to={{ observation.id }}"
+                class="action-card"
+            >
+                <span class="action-icon">⇄</span>
+
+                <span>
+                    <strong>Compare With Baseline</strong>
+                    <small>
+                        Identify services added, removed, or changed.
+                    </small>
+                </span>
+            </a>
+
+            {% endif %}
+
+        {% endif %}
+
+
+        <a
+            href="{{ url_for('dashboard') }}#events"
+            class="action-card"
+        >
+            <span class="action-icon">⚡</span>
+
+            <span>
+                <strong>Detection Events</strong>
+                <small>
+                    Review recent network detection activity.
+                </small>
+            </span>
+        </a>
+
+
+        <a
+            href="{{ url_for('dashboard') }}#alerts"
+            class="action-card"
+        >
+            <span class="action-icon">!</span>
+
+            <span>
+                <strong>Alerts</strong>
+                <small>
+                    Review active and resolved alert conditions.
+                </small>
+            </span>
+        </a>
+
+    </div>
+
+</section>
+
+
+<div class="page-footer">
+
+    <span>
+        ARGUS Observation #{{ observation.id }}
+    </span>
+
+    <span>
+        {{ observation.observed_at|date_only }}
+        {{ observation.observed_at|time_only }}
+    </span>
+
+</div>
+
+{% endblock %}

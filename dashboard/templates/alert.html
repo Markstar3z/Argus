@@ -1,0 +1,476 @@
+{% extends "base.html" %}
+
+{% block title %}Alert #{{ alert.id }}{% endblock %}
+
+{% block content %}
+
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Detection Alert</p>
+        <h1>Alert #{{ alert.id }}</h1>
+        <p class="page-description">
+            Investigation record for a detected network condition on {{ asset.ip }}.
+        </p>
+    </div>
+</section>
+
+
+<section class="profile-grid">
+
+    <div class="profile-card">
+        <span class="profile-label">Asset</span>
+        <strong>{{ asset.ip }}</strong>
+    </div>
+
+    <div class="profile-card">
+        <span class="profile-label">Event Type</span>
+        <strong>
+            {{ alert.event_type|replace("_", " ")|title }}
+        </strong>
+    </div>
+
+    <div class="profile-card">
+        <span class="profile-label">Severity</span>
+        <span class="severity-badge {{ alert.severity }}">
+            {{ alert.severity }}
+        </span>
+    </div>
+
+    <div class="profile-card">
+        <span class="profile-label">Status</span>
+
+        {% if alert.status == "active" %}
+            <span class="status-badge active">
+                Active
+            </span>
+        {% else %}
+            <span class="status-badge">
+                {{ alert.status }}
+            </span>
+        {% endif %}
+    </div>
+
+</section>
+
+
+{% if alert.risk %}
+
+<section class="panel risk-overview">
+
+    <div class="panel-header">
+
+        <div>
+            <p class="eyebrow">Risk Intelligence</p>
+            <h2>Alert Risk Assessment</h2>
+        </div>
+
+        <div class="risk-display">
+
+            <span class="risk-score {{ alert.risk.level }}">
+                {{ alert.risk.score }}
+            </span>
+
+            <span class="risk-badge {{ alert.risk.level }}">
+                {{ alert.risk.level }}
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="risk-explanation">
+
+        <div class="risk-explanation-header">
+            <h3>Why ARGUS assigned this risk</h3>
+        </div>
+
+        {% if alert.risk.reasons %}
+
+        <ul class="risk-reasons-list">
+
+            {% for reason in alert.risk.reasons %}
+
+            <li>
+                <span class="risk-bullet">•</span>
+                {{ reason }}
+            </li>
+
+            {% endfor %}
+
+        </ul>
+
+        {% else %}
+
+        <p class="muted">
+            No additional risk factors were recorded.
+        </p>
+
+        {% endif %}
+
+    </div>
+
+</section>
+
+{% endif %}
+
+
+<section class="panel">
+
+    <div class="panel-header">
+
+        <div>
+            <p class="eyebrow">Alert Lifecycle</p>
+            <h2>Alert Timeline</h2>
+        </div>
+
+        <span class="panel-count">
+            {{ alert.occurrence_count }}
+        </span>
+
+    </div>
+
+
+    <div class="timeline">
+
+        <div class="timeline-item">
+
+            <div class="timeline-marker"></div>
+
+            <div class="timeline-content">
+
+                <span class="timeline-label">
+                    First Observed
+                </span>
+
+                <strong>
+                    {{ alert.first_seen|date_only }}
+                    {{ alert.first_seen|time_only }}
+                </strong>
+
+                <span class="timeline-meta">
+                    Observation #{{ alert.first_observation_id }}
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="timeline-item">
+
+            <div class="timeline-marker"></div>
+
+            <div class="timeline-content">
+
+                <span class="timeline-label">
+                    Latest Observation
+                </span>
+
+                <strong>
+                    {{ alert.last_seen|date_only }}
+                    {{ alert.last_seen|time_only }}
+                </strong>
+
+                <span class="timeline-meta">
+                    Observation #{{ alert.latest_observation_id }}
+                </span>
+
+            </div>
+
+        </div>
+
+
+        {% if alert.resolved_at %}
+
+        <div class="timeline-item">
+
+            <div class="timeline-marker"></div>
+
+            <div class="timeline-content">
+
+                <span class="timeline-label">
+                    Resolved
+                </span>
+
+                <strong>
+                    {{ alert.resolved_at|date_only }}
+                    {{ alert.resolved_at|time_only }}
+                </strong>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</section>
+
+
+<section class="panel">
+
+    <div class="panel-header">
+
+        <div>
+            <p class="eyebrow">Network Condition</p>
+            <h2>Detection Details</h2>
+        </div>
+
+    </div>
+
+
+    <div class="detail-grid">
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Event Type
+            </span>
+
+            <strong>
+                {{ alert.event_type|replace("_", " ")|title }}
+            </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Port
+            </span>
+
+            <strong>
+                {% if alert.port %}
+                    {{ alert.port }}/{{ alert.protocol }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Occurrences
+            </span>
+
+            <strong>
+                {{ alert.occurrence_count }}
+            </strong>
+
+        </div>
+
+
+        <div class="detail-item">
+
+            <span class="detail-label">
+                Baseline Deviation
+            </span>
+
+            {% if alert.baseline_deviation %}
+
+                <span class="status-badge warning">
+                    Detected
+
+                </span>
+
+            {% else %}
+
+                <span class="status-badge">
+                    None
+
+                </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="panel">
+
+    <div class="panel-header">
+
+        <div>
+            <p class="eyebrow">Evidence</p>
+            <h2>Related Detection Events</h2>
+        </div>
+
+        <span class="panel-count">
+            {{ alert.events|length }}
+        </span>
+
+    </div>
+
+
+    {% if alert.events %}
+
+    <div class="event-list">
+
+        {% for event in alert.events %}
+
+        <div class="event-card">
+
+            <div class="event-card-main">
+
+                <div class="event-card-top">
+
+                    <span class="severity-badge {{ event.severity }}">
+                        {{ event.severity }}
+                    </span>
+
+                    <span class="status-badge">
+                        Observation #{{ event.observation_id }}
+                    </span>
+
+                </div>
+
+                <h3>
+                    {{ event.event_type|replace("_", " ")|title }}
+                </h3>
+
+                <p class="event-message">
+                    {{ event.message }}
+                </p>
+
+                <div class="event-meta">
+
+                    {% if event.port %}
+                        <span>
+                            Port {{ event.port }}/{{ event.protocol }}
+                        </span>
+                    {% endif %}
+
+                    {% if event.service_name %}
+                        <span>
+                            {{ event.service_name }}
+                        </span>
+                    {% endif %}
+
+                    {% if event.product %}
+                        <span>
+                            {{ event.product }}
+                        </span>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            {% if event.risk %}
+
+            <div class="risk-summary">
+
+                <div class="risk-score {{ event.risk.level }}">
+                    {{ event.risk.score }}
+                </div>
+
+                <div class="risk-label">
+
+                    <span class="risk-badge {{ event.risk.level }}">
+                        {{ event.risk.level }}
+                    </span>
+
+                    <small>
+                        Risk
+                    </small>
+
+                </div>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+
+        <div class="empty-icon">
+            ◌
+        </div>
+
+        <h3>
+            No Related Events
+        </h3>
+
+        <p>
+            No detection events are currently associated with this alert.
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</section>
+
+
+<section class="action-grid">
+
+    <a
+        href="{{ url_for(
+            'asset_detail',
+            asset_id=asset.id
+        ) }}"
+        class="action-card"
+    >
+
+        <div class="action-icon">
+            ←
+        </div>
+
+        <div>
+            <h3>
+                Back to Asset
+            </h3>
+
+            <p>
+                Return to the asset investigation timeline.
+            </p>
+        </div>
+
+    </a>
+
+
+    <a
+        href="{{ url_for(
+            'observation_detail',
+            asset_id=asset.id,
+            observation_id=alert.latest_observation_id
+        ) }}"
+        class="action-card"
+    >
+
+        <div class="action-icon">
+            ◌
+        </div>
+
+        <div>
+            <h3>
+                Latest Observation
+            </h3>
+
+            <p>
+                Inspect the network state that generated this alert.
+            </p>
+        </div>
+
+    </a>
+
+</section>
+
+{% endblock %}

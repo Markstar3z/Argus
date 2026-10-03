@@ -1,0 +1,909 @@
+{% extends "base.html" %}
+
+{% block title %}
+ARGUS | Asset {{ asset.ip }}
+{% endblock %}
+
+{% block breadcrumb %}
+Asset / {{ asset.ip }}
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+
+        <div class="eyebrow">
+            NETWORK ASSET
+        </div>
+
+        <h1>
+            {{ asset.ip }}
+        </h1>
+
+        <p>
+            Asset profile, historical observations, baseline state and
+            detection activity.
+        </p>
+
+    </div>
+
+    <div class="page-header-actions">
+
+        <a
+            href="{{ url_for('dashboard') }}"
+            class="button button-secondary"
+        >
+            ← Dashboard
+        </a>
+
+    </div>
+
+</div>
+
+
+<section class="profile-grid">
+
+    <div class="profile-card">
+
+        <div class="profile-card-header">
+
+            <div>
+                <span class="card-kicker">
+                    Asset Identity
+                </span>
+
+                <h2>
+                    {{ asset.ip }}
+                </h2>
+            </div>
+
+            <span class="status-badge status-up">
+                UP
+            </span>
+
+        </div>
+
+
+        <div class="profile-grid-inner">
+
+            <div class="profile-field">
+
+                <span>
+                    IP Address
+                </span>
+
+                <strong>
+                    {{ asset.ip }}
+                </strong>
+
+            </div>
+
+
+            <div class="profile-field">
+
+                <span>
+                    Hostname
+                </span>
+
+                <strong>
+                    {{ asset.hostname or "Unknown" }}
+                </strong>
+
+            </div>
+
+
+            <div class="profile-field">
+
+                <span>
+                    MAC Address
+                </span>
+
+                <strong>
+                    {{ asset.mac or "Unknown" }}
+                </strong>
+
+            </div>
+
+
+            <div class="profile-field">
+
+                <span>
+                    Reference Baseline
+                </span>
+
+                <strong>
+                    {% if asset.baseline_observation_id %}
+                        Observation #{{ asset.baseline_observation_id }}
+                    {% else %}
+                        Not established
+                    {% endif %}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="profile-card">
+
+        <div class="profile-card-header">
+
+            <div>
+                <span class="card-kicker">
+                    Monitoring State
+                </span>
+
+                <h2>
+                    Current State
+                </h2>
+            </div>
+
+        </div>
+
+
+        <div class="state-stack">
+
+            <div class="state-row">
+
+                <span>
+                    Current Status
+                </span>
+
+                {% if asset.status == "up" %}
+                    <span class="status-badge status-up">
+                        UP
+                    </span>
+                {% else %}
+                    <span class="status-badge status-neutral">
+                        {{ asset.status or "UNKNOWN" }}
+                    </span>
+                {% endif %}
+
+            </div>
+
+
+            <div class="state-row">
+
+                <span>
+                    Current Services
+                </span>
+
+                <strong>
+                    {{ state.latest.service_count if state.latest else 0 }}
+                </strong>
+
+            </div>
+
+
+            <div class="state-row">
+
+                <span>
+                    Observations
+                </span>
+
+                <strong>
+                    {{ history.observations|length }}
+                </strong>
+
+            </div>
+
+
+            <div class="state-row">
+
+                <span>
+                    Last Seen
+                </span>
+
+                <strong>
+                    {{ asset.last_seen|date_only }}
+                    {{ asset.last_seen|time_only }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section
+    class="panel"
+    id="comparison"
+>
+
+    <div class="panel-header">
+
+        <div>
+
+            <span class="card-kicker">
+                NETWORK STATE
+            </span>
+
+            <h2>
+                Current vs Baseline
+            </h2>
+
+        </div>
+
+        <span class="panel-meta">
+            ARGUS state analysis
+        </span>
+
+    </div>
+
+
+    <div class="comparison-grid">
+
+        <div class="comparison-card">
+
+            <div class="comparison-label">
+                Reference Baseline
+            </div>
+
+            {% if state.baseline %}
+
+                <div class="comparison-id">
+                    Observation #{{ state.baseline.id }}
+                </div>
+
+                <div class="comparison-time">
+                    {{ state.baseline.observed_at|date_only }}
+                    {{ state.baseline.observed_at|time_only }}
+                </div>
+
+                <div class="comparison-status">
+                    {{ state.baseline.status|upper }}
+                </div>
+
+            {% else %}
+
+                <div class="empty-state compact">
+                    No baseline established.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="comparison-arrow">
+            →
+        </div>
+
+
+        <div class="comparison-card">
+
+            <div class="comparison-label">
+                Latest Observation
+            </div>
+
+            {% if state.latest %}
+
+                <div class="comparison-id">
+                    Observation #{{ state.latest.id }}
+                </div>
+
+                <div class="comparison-time">
+                    {{ state.latest.observed_at|date_only }}
+                    {{ state.latest.observed_at|time_only }}
+                </div>
+
+                <div class="comparison-status">
+                    {{ state.latest.status|upper }}
+                </div>
+
+            {% else %}
+
+                <div class="empty-state compact">
+                    No observations available.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section
+    class="panel"
+    id="baseline"
+>
+
+    <div class="panel-header">
+
+        <div>
+
+            <span class="card-kicker">
+                BASELINE ANALYSIS
+            </span>
+
+            <h2>
+                Deviation Assessment
+            </h2>
+
+        </div>
+
+        {% if baseline_result %}
+
+            {% if baseline_result.added or baseline_result.removed or baseline_result.changed %}
+
+                <span class="risk-badge risk-medium">
+                    DEVIATION DETECTED
+                </span>
+
+            {% else %}
+
+                <span class="risk-badge risk-low">
+                    BASELINE MATCH
+                </span>
+
+            {% endif %}
+
+        {% endif %}
+
+    </div>
+
+
+    {% if baseline_error %}
+
+        <div class="empty-state">
+            {{ baseline_error }}
+        </div>
+
+    {% elif baseline_result %}
+
+        <div class="change-summary">
+
+            <div class="change-summary-item">
+
+                <span>
+                    Added
+                </span>
+
+                <strong>
+                    {{ baseline_result.added|length }}
+                </strong>
+
+            </div>
+
+
+            <div class="change-summary-item">
+
+                <span>
+                    Removed
+                </span>
+
+                <strong>
+                    {{ baseline_result.removed|length }}
+                </strong>
+
+            </div>
+
+
+            <div class="change-summary-item">
+
+                <span>
+                    Changed
+                </span>
+
+                <strong>
+                    {{ baseline_result.changed|length }}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        {% if baseline_result.added %}
+
+            <div class="change-section">
+
+                <div class="change-section-header">
+
+                    <h3>
+                        Added Services
+                    </h3>
+
+                    <span class="change-count">
+                        {{ baseline_result.added|length }}
+                    </span>
+
+                </div>
+
+
+                <div class="service-list">
+
+                    {% for service in baseline_result.added %}
+
+                        <div class="service-row">
+
+                            <div class="service-main">
+
+                                <strong>
+                                    {{ service[2] or "Unknown service" }}
+                                </strong>
+
+                                <span>
+                                    {{ service[0] }}/{{ service[1] }}
+                                </span>
+
+                            </div>
+
+                            <div class="service-meta">
+
+                                {% if service[3] %}
+                                    {{ service[3] }}
+                                {% endif %}
+
+                                {% if service[4] %}
+                                    {{ service[4] }}
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+        {% if baseline_result.removed %}
+
+            <div class="change-section">
+
+                <div class="change-section-header">
+
+                    <h3>
+                        Removed Services
+                    </h3>
+
+                    <span class="change-count">
+                        {{ baseline_result.removed|length }}
+                    </span>
+
+                </div>
+
+
+                <div class="service-list">
+
+                    {% for service in baseline_result.removed %}
+
+                        <div class="service-row">
+
+                            <div class="service-main">
+
+                                <strong>
+                                    {{ service[2] or "Unknown service" }}
+                                </strong>
+
+                                <span>
+                                    {{ service[0] }}/{{ service[1] }}
+                                </span>
+
+                            </div>
+
+                            <div class="service-meta">
+
+                                {% if service[3] %}
+                                    {{ service[3] }}
+                                {% endif %}
+
+                                {% if service[4] %}
+                                    {{ service[4] }}
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+        {% if baseline_result.changed %}
+
+            <div class="change-section">
+
+                <div class="change-section-header">
+
+                    <h3>
+                        Changed Services
+                    </h3>
+
+                    <span class="change-count">
+                        {{ baseline_result.changed|length }}
+                    </span>
+
+                </div>
+
+
+                <div class="service-list">
+
+                    {% for previous, current in baseline_result.changed %}
+
+                        <div class="service-row">
+
+                            <div class="service-main">
+
+                                <strong>
+                                    {{ current[2] or "Unknown service" }}
+                                </strong>
+
+                                <span>
+                                    {{ current[0] }}/{{ current[1] }}
+                                </span>
+
+                            </div>
+
+                            <div class="service-meta">
+
+                                {% if previous[4] or current[4] %}
+                                    {{ previous[4] or "unknown" }}
+                                    →
+                                    {{ current[4] or "unknown" }}
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+        {% if not baseline_result.added
+              and not baseline_result.removed
+              and not baseline_result.changed %}
+
+            <div class="empty-state compact">
+
+                Current network state matches the established
+                service baseline.
+
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+
+</section>
+
+
+<section
+    class="panel observation-history-panel"
+    id="observations"
+>
+
+    <div class="panel-header">
+
+        <div>
+
+            <span class="card-kicker">
+                OBSERVATION HISTORY
+            </span>
+
+            <h2>
+                Network Timeline
+            </h2>
+
+            <p class="panel-description">
+                Recorded states of this asset across ARGUS observations.
+            </p>
+
+        </div>
+
+        <div class="history-count">
+            <strong>{{ history.observations|length }}</strong>
+            <span>observations</span>
+        </div>
+
+    </div>
+
+
+    {% if history.observations %}
+
+        <div class="observation-timeline">
+
+            {% for observation in history.observations|reverse %}
+
+                <div class="observation-entry">
+
+                    <div class="observation-line">
+
+                        <span class="observation-node"></span>
+
+                    </div>
+
+
+                    <div class="observation-card">
+
+                        <div class="observation-card-top">
+
+                            <div class="observation-identity">
+
+                                <div class="observation-number">
+                                    #{{ observation.id }}
+                                </div>
+
+                                <div class="observation-date">
+
+                                    <strong>
+                                        {{ observation.observed_at|date_only }}
+                                    </strong>
+
+                                    <span>
+                                        {{ observation.observed_at|time_only }}
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="observation-tags">
+
+                                {% if observation.is_baseline %}
+
+                                    <span class="observation-tag baseline-tag">
+                                        BASELINE
+                                    </span>
+
+                                {% endif %}
+
+                                {% if observation.status == "up" %}
+
+                                    <span class="observation-tag online-tag">
+                                        UP
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="observation-tag">
+                                        {{ observation.status|upper }}
+                                    </span>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="observation-card-middle">
+
+                            <div class="observation-stat">
+
+                                <span class="observation-stat-label">
+                                    SERVICES
+                                </span>
+
+                                <strong>
+                                    {{ observation.services|length }}
+                                </strong>
+
+                            </div>
+
+
+                            <div class="observation-stat-divider"></div>
+
+
+                            <div class="observation-stat">
+
+                                <span class="observation-stat-label">
+                                    STATE
+                                </span>
+
+                                <strong>
+                                    {{ observation.status|upper }}
+                                </strong>
+
+                            </div>
+
+
+                            {% if observation.is_baseline %}
+
+                                <div class="observation-stat-divider"></div>
+
+                                <div class="observation-stat baseline-stat">
+
+                                    <span class="observation-stat-label">
+                                        REFERENCE
+                                    </span>
+
+                                    <strong>
+                                        ESTABLISHED
+                                    </strong>
+
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="observation-card-bottom">
+
+                            <span class="observation-summary">
+
+                                {% if observation.services %}
+
+                                    {{ observation.services|length }}
+                                    service{{ "s" if observation.services|length != 1 else "" }}
+                                    detected
+
+                                {% else %}
+
+                                    No exposed services detected
+
+                                {% endif %}
+
+                            </span>
+
+
+                            <div class="observation-actions">
+
+                                <a
+                                    href="{{ url_for(
+                                        'observation_detail',
+                                        asset_id=asset.id,
+                                        observation_id=observation.id
+                                    ) }}"
+                                    class="button button-secondary button-small"
+                                >
+                                    Inspect
+                                </a>
+
+
+                                {% if state.baseline %}
+
+                                    {% if observation.id != state.baseline.id %}
+
+                                        <a
+                                            href="{{ url_for(
+                                                'observation_compare',
+                                                asset_id=asset.id
+                                            ) }}?from={{ state.baseline.id }}&to={{ observation.id }}"
+                                            class="button button-secondary button-small"
+                                        >
+                                            Compare
+                                        </a>
+
+                                    {% endif %}
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-state">
+            No observations have been recorded for this asset.
+        </div>
+
+    {% endif %}
+
+</section>
+
+<section class="action-grid">
+
+    <a
+        href="{{ url_for('observations') }}"
+        class="action-card"
+    >
+
+        <span class="action-icon">
+            ◌
+        </span>
+
+        <div>
+
+            <strong>
+                Observation History
+            </strong>
+
+            <span>
+                Review recorded network states.
+            </span>
+
+        </div>
+
+        <span class="action-arrow">
+            →
+        </span>
+
+    </a>
+
+
+    <a
+        href="{{ url_for('comparisons') }}"
+        class="action-card"
+    >
+
+        <span class="action-icon">
+            ⇄
+        </span>
+
+        <div>
+
+            <strong>
+                State Comparisons
+            </strong>
+
+            <span>
+                Investigate changes between observations.
+            </span>
+
+        </div>
+
+        <span class="action-arrow">
+            →
+        </span>
+
+    </a>
+
+
+    <a
+        href="{{ url_for('dashboard') }}#alerts"
+        class="action-card"
+    >
+
+        <span class="action-icon">
+            !
+        </span>
+
+        <div>
+
+            <strong>
+                Detection Alerts
+            </strong>
+
+            <span>
+                Review conditions associated with this asset.
+            </span>
+
+        </div>
+
+        <span class="action-arrow">
+            →
+        </span>
+
+    </a>
+
+</section>
+
+{% endblock %}
