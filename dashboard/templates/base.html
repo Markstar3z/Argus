@@ -6,9 +6,19 @@
 
     <title>{% block title %}ARGUS | Network Intelligence{% endblock %}</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap"
+    >
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='css/style.css') }}"
+    >
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/theme.css') }}"
     >
 </head>
 
@@ -175,13 +185,27 @@
             </div>
 
 
-            <div class="topbar-status">
+            <div class="topbar-right">
 
-                <span class="status-dot"></span>
-
-                <span>
-                    Monitoring active
+                {% if notify_channels %}
+                <span class="notify-chip on" title="Alerts are pushed to you">
+                    <i></i>Notifying via {{ notify_channels|join(", ") }}
                 </span>
+                {% else %}
+                <span class="notify-chip off" title="Set up Telegram or email in .env to get pushed alerts">
+                    <i></i>Notifications off
+                </span>
+                {% endif %}
+
+                <div class="topbar-status">
+
+                    <span class="status-dot"></span>
+
+                    <span>
+                        Monitoring active
+                    </span>
+
+                </div>
 
             </div>
 
