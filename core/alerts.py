@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from core.database import get_connection
+from core.notifier import notify_alert
 
 
 INVESTIGATION_STATUSES = {
@@ -235,6 +236,11 @@ def process_event(event_id):
                 action = "unchanged"
 
         connection.commit()
+
+        # Push only brand new alerts, so a persisting condition
+        # does not notify the operator on every scan.
+        if action == "created":
+            notify_alert(alert_id)
 
         return {
             "event_id": event_id,
