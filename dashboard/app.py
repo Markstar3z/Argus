@@ -12,6 +12,7 @@ from flask import (
 from core.database import get_connection
 from core.history import get_asset_history
 from core.baseline import compare_to_baseline, compare_observations
+from core.notifier import configured_channels
 from core.alerts import (
     start_investigation,
     resolve_investigation,
@@ -29,6 +30,11 @@ from dashboard.data import (
 
 
 app = Flask(__name__)
+
+
+@app.context_processor
+def inject_notification_state():
+    return {"notify_channels": configured_channels()}
 
 
 @app.template_filter("date_only")
